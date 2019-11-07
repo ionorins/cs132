@@ -1,0 +1,64 @@
+#!/bin/sh
+#
+# wrap script for /courses/cg152 Java software
+# Ashley Ward (ashley@dcs.warwick.ac.uk) November 2002
+#
+# $Id: wrapjava,v 1.7 2003/01/02 16:49:10 ashley Exp $
+#
+
+# This allows us to keep multiple versions of the various Java
+# software around without needing to create a wrapper shell script for
+# each version.  We can also set the default version used below.  If
+# it is set here in this script, changes to the default version can be
+# recorded with RCS.
+
+# Commands used
+BASENAME=/run/user/1000/gvfs/sftp:host=login-1.dcs.warwick.ac.uk,user=u1925873/bin/basename
+CUT=/run/user/1000/gvfs/sftp:host=login-1.dcs.warwick.ac.uk,user=u1925873/bin/cut
+#JAVA=/courses/cs132/bin/java
+#JAVA variable changed to pick up local java to handle mixed 32/64 bit machines
+#RAP 20 Feb 2012
+JAVA=java
+
+# Files used
+JAVAINSTALLBASE=/run/user/1000/gvfs/sftp:host=login-1.dcs.warwick.ac.uk,user=u1925873/courses/cs132/platforms/java
+
+# Read full name that this wrapper was invoked as (eg OpenLogicSim-1.26)
+FULLNAME=`$BASENAME $0`
+
+# Figure out name part (eg OpenLogicSim)
+NAME=`echo $FULLNAME | $CUT -d'-' -f1`
+
+# Figure out version, if there is one.  If there
+# isn't one, this just ends up set to the whole of $FULLNAME
+VERSION=`echo $FULLNAME | cut -d'-' -f2`
+
+if [ "X${NAME}" = "X${VERSION}" ]; then
+  # no version supplied: they want to run the most up to date stable version
+  case $NAME in
+    OpenLogicSim)
+      # VERSION=1.36;;
+      VERSION=2.1;;
+    MicSim)
+      VERSION=1.1;;
+    *)
+      echo "$0: can't find an up to date stable version of $NAME, sorry" >&2
+      exit 1;;
+  esac
+fi
+
+# Find path to Java files
+DIR=${JAVAINSTALLBASE}/${NAME}-${VERSION}
+
+case $NAME in
+  OpenLogicSim)
+    TOEXEC="${JAVA} -jar OpenLogicSim.jar";;
+  MicSim)
+    TOEXEC="${JAVA} -cp JSX1.0.3.1.jar:. Simulation -badswing";;
+  *)
+    echo "$0: whoops: don't know how to exec $NAME, sorry" >&2
+    exit 1;;
+esac
+
+cd $DIR
+exec ${TOEXEC} "$@"
